@@ -6,10 +6,10 @@ var STYLE_NAME_BY_SEX = false;
 var default_part_2_architecture = [12, 6];
 var default_part_3_architecture = [12];
 
-var default_num_experiments = 2;
+var default_num_experiments = 1;
 var num_experiments = default_num_experiments;
 
-var default_num_epochs = 5000;
+var default_num_epochs = 100;
 var num_epochs = default_num_epochs;
 var default_train_size = 89;
 var train_size = default_train_size;
@@ -192,7 +192,8 @@ function visualize_data(data, part, clf_result) {
                 return size;
             })
             .style('fill', function(d, i) {
-                return (sizeScale(d) >= 0) ? "red" : "blue";
+                // return (sizeScale(d) >= 0) ? "red" : "blue";
+                return (sizeScale(d) >= 0) ? "#0877bd" : "#f59322";
             })
             .style('stroke', "black")
             .style("opacity", 0.85)
@@ -266,7 +267,7 @@ function visualize_data(data, part, clf_result) {
     red_g.append("rect")
         .attr("height", 10)
         .attr("width", 10)
-        .style("fill", "red")
+        .style("fill", "#0877bd")
         .style("stroke", "black")
         .style("opacity", 0.85);
 
@@ -283,7 +284,7 @@ function visualize_data(data, part, clf_result) {
     blue_g.append("rect")
         .attr("height", 10)
         .attr("width", 10)
-        .style("fill", "blue")
+        .style("fill", "#f59322")
         .style("stroke", "black")
         .style("opacity", 0.85);
 
