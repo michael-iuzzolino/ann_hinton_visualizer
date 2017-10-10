@@ -9,7 +9,7 @@ var default_part_3_architecture = [12];
 var default_num_experiments = 1;
 var num_experiments = default_num_experiments;
 
-var default_num_epochs = 10;
+var default_num_epochs = 20;
 var num_epochs = default_num_epochs;
 var default_train_size = 89;
 var train_size = default_train_size;
