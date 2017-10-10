@@ -1,0 +1,53 @@
+.d3-tip {
+  line-height: 1;
+  font-weight: bold;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-radius: 2px;
+}
+
+#controls_div {
+    text-align: center;
+    display: absolute;
+    margin-top: 25px;
+}
+
+#part_2_div {
+    display: relative;
+    float: left;
+    margin-left: 100px;
+}
+
+#part_3_div {
+    display: relative;
+    margin-left: 500px;
+}
+
+#networking_training_tooltip_div {
+    position: relative;
+    top: 150px;
+    font-size: 20px;
+}
+
+
+
+#experiment_num_div {
+    margin-top: 25px;
+}
+
+#epochs_div {
+    margin-top: 15px;
+}
+#train_size_div {
+    margin-top: 15px;
+    margin-bottom: 25px;
+}
+
+#main_title {
+    text-align: center;
+}
+
+#main_vis_div {
+    text-align: center;
+}
