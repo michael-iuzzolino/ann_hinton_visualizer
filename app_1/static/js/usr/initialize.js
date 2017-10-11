@@ -333,7 +333,7 @@ function run_part_3_network() {
         method          :   'POST',
         contentType     :   'application/json',
         dataType        :   'json',
-        data            :   JSON.stringify({"architecture" : part_2_architecture, "experiments" : num_experiments, "num_epochs" : num_epochs, "train_size" : train_size}),
+        data            :   JSON.stringify({"architecture" : part_3_architecture, "experiments" : num_experiments, "num_epochs" : num_epochs, "train_size" : train_size}),
         success : function(clf_result) {
             d3.select("#part_3_button").attr("value", "Generate Network - Part 3");
             var path_to_csv = "app_1/static/data/part_3_weights.csv";
