@@ -7,47 +7,143 @@
   border-radius: 2px;
 }
 
+#training_tooltip_text {
+    position: absolute;
+    left: 550px;
+    top: 250px;
+}
+
+#net_arch_vis_div {
+    position: absolute;
+    left: 500px;
+}
 #controls_div {
-    text-align: center;
-    display: absolute;
-    margin-top: 25px;
-}
-
-#part_2_div {
-    display: relative;
+    margin-left: 50px;
     float: left;
-    margin-left: 100px;
 }
 
-#part_3_div {
-    display: relative;
-    margin-left: 500px;
+#main_vis_div {
+    float: right;
 }
 
-#networking_training_tooltip_div {
-    position: relative;
-    top: 150px;
-    font-size: 20px;
-}
-
-
-
-#experiment_num_div {
-    margin-top: 25px;
-}
-
-#epochs_div {
-    margin-top: 15px;
-}
-#train_size_div {
-    margin-top: 15px;
-    margin-bottom: 25px;
-}
 
 #main_title {
     text-align: center;
 }
 
 #main_vis_div {
+    margin-top: 25px;
     text-align: center;
+    margin-right: 50px;
+}
+
+#plot_vis_svg {
+    position: relative;
+    top: -200px;
+    left: -300px;
+}
+
+#dropout_keep_prob_slider_text {
+    position: relative;
+
+}
+
+#dropout_text_div label {
+    float: left;
+}
+#slider_val_div {
+    position: relative;
+    left: 10px;
+}
+
+#slider_div {
+    position: relative;
+    margin-left: 10px;
+    top: -10px;
+}
+
+#loss_function_div {
+    margin-top: 15px;
+}
+
+#hidden_architecture_field {
+    margin-left: 15px;
+    float: right;
+}
+
+#experiments_text_field {
+    margin-left: 15px;
+    float: right;
+}
+
+#training_epochs_text_field {
+    margin-left: 15px;
+    float: right;
+}
+
+#training_size_text_field {
+    margin-left: 15px;
+    float: right;
+}
+
+#experiments_div {
+    margin-top: 15px;
+}
+
+#epochs_div {
+    margin-top: 15px;
+}
+
+#train_size_div {
+    margin-top: 15px;
+}
+
+#run_network_button {
+    background-color: #6666ff;
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+}
+
+#run_network_button_div {
+    margin-top: 50px;
+    text-align: center;
+}
+
+#hidden_arch_div {
+    float: left;
+    position: relative;
+    padding-bottom: 20;
+    width: 100%;
+}
+
+#hidden_arch_div label{
+    float: left;
+}
+
+#hidden_architecture_field {
+    margin-left: 15px;
+    float: right;
+}
+
+
+
+#network_parameters_main_div {
+    text-align: center;
+}
+
+#loss_function_div label {
+    float: left;
+}
+
+#activation_function_div label {
+    float: left;
+}
+
+#dropout_div label {
+    float: left;
 }

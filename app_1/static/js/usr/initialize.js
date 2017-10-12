@@ -1,367 +1,107 @@
 "use strict";
-var VIS_CONTAINER_HEIGHT = 450;
-var VIS_CONTAINER_WIDTH = 1000;
-var STYLE_NAME_BY_SEX = false;
 
-var default_part_2_architecture = [12, 6];
-var default_part_3_architecture = [12];
 
+// NETWORK ARCH PARAMS
+// --------------------------------------------------------------------------------------------------
+var architectures = {"Hinton" : [12, 6], "Fully Connected" : [12]};
+var selected_architecture_type = "Hinton";
+var current_hidden_architecture = architectures["Hinton"];
+
+var loss_functions = {"Cross Entropy (Xentropy)" : "xentropy", "Mean Squared Error (MSE)" : "mse"};
+var loss_function = loss_functions["Cross Entropy (Xentropy)"];
+
+var activation_functions = {"ReLU" : "relu", "Sigmoid" : "sigmoid"};
+var activation_function = activation_functions["ReLU"];
+
+var dropout_default = false;
+var dropout = dropout_default;
+
+var dropout_keep_prob = 0.5;
+// --------------------------------------------------------------------------------------------------
+
+// EXPERIMENT / TRAINING PARAMS
+// --------------------------------------------------------------------------------------------------
 var default_num_experiments = 1;
 var num_experiments = default_num_experiments;
 
-var default_num_epochs = 20;
+var default_num_epochs = 500;
 var num_epochs = default_num_epochs;
 var default_train_size = 89;
 var train_size = default_train_size;
 var max_train_size = 104;
-
-var part_2_architecture = default_part_2_architecture;
-var part_3_architecture = default_part_3_architecture;
-
+// --------------------------------------------------------------------------------------------------
 
 
 var computing_interval = undefined;
+var generating_network = false;
+var network_vis_active = true;
 
 
-function visualize_data(data, part, clf_result) {
+function run_network() {
 
-    d3.select("#main_vis_div").remove();
+    var clf_data = {
+        "architecture" : current_hidden_architecture,
+        "experiments" : num_experiments,
+        "num_epochs" : num_epochs,
+        "train_size" : train_size,
+        "dropout" : dropout,
+        "activation_function" : activation_function,
+        "loss_function" : loss_function,
+        "dropout_keep_prob" : dropout_keep_prob,
+        "architecture_type" : selected_architecture_type
+    };
 
-    var result_x = 20;
-    var result_y = 20;
-
-    var row_height = 30;
-    var row_width = 30;
-    var weight_data = data["weights"];
-    var name_data = data["names"];
-
-    var female_names = ["Angela", "Charlotte", "Christine", "Francesca", "Gina", "Jennifer", "Lucia", "Margaret", "Maria", "Penelope", "Sophia", "Victoria"];
-    var male_names = ["Alfonso", "Andrew", "Arthur", "Charles", "Christopher", "Colin", "Emilio", "James", "Marco", "Pierro", "Roberto", "Tomaso"];
-
-    if (part === "part_2") {
-        VIS_CONTAINER_HEIGHT = 550;
-        VIS_CONTAINER_WIDTH = 1000;
-        var legend_x = VIS_CONTAINER_WIDTH*0.9;
-        var legend_y = 50;
-        var plot_title = "Person1 to Distributed Person1 Layer Weights";
-        var current_architecture = part_2_architecture;
-    }
-    else if (part === "part_3") {
-        VIS_CONTAINER_HEIGHT = (row_height * weight_data.length)*1.4 + 200;
-        VIS_CONTAINER_WIDTH = 1400;
-        var legend_x = VIS_CONTAINER_WIDTH*0.9;
-        var legend_y = 50;
-        var plot_title = "Input to First Hidden Layer Weights";
-        var current_architecture = part_3_architecture;
-    }
-
-    var hidden_neurons = [];
-    for (var i=0; i < weight_data.length; i++) {
-        hidden_neurons.push(i+1);
-    }
-
-    var min_weight = d3.min(weight_data, function(d) {
-        return d3.min(d);
-    });
-
-    var max_weight = d3.max(weight_data, function(d) {
-        return d3.max(d);
-    });
-
-    var sizeScale = d3.scaleLinear()
-        .domain([min_weight, max_weight])
-        .range([-20, 20]);
-
-    var main_vis_div = d3.select("body").append("div").attr("id", "main_vis_div");
-
-    var main_vis_svg = main_vis_div.append("svg").attr("id", "main_vis_svg")
-        .attr("height", VIS_CONTAINER_HEIGHT)
-        .attr("width", VIS_CONTAINER_WIDTH);
-
-    main_vis_svg.append("rect")
-        .attr("height", VIS_CONTAINER_HEIGHT)
-        .attr("width", VIS_CONTAINER_WIDTH)
-        .style("fill", "white")
-        .style("stroke", "black");
-
-
-    // PLOT TITLE -----------------
-    // ---------------------------------------------------------------
-    var plot_title_g = main_vis_svg.append("g")
-        .attr("id", "plot_title_g")
-        .attr("transform", "translate(300, 50)");
-
-    plot_title_g.append("text")
-        .attr("x", 5)
-        .attr("y", 5)
-        .text(plot_title)
-        .style("font-size", "24px");
-    // ---------------------------------------------------------------
-
-    // RESULTS -----------------
-    // ---------------------------------------------------------------
-    var result_g = main_vis_svg.append("g")
-        .attr("id", "result_g")
-        .attr("transform", "translate("+result_x+", "+result_y+")");
-
-    result_g.append("text")
-        .attr("x", 5)
-        .attr("y", 5)
-        .text("Results");
-
-    var mean_accuracy = clf_result["mean"];
-    var std_accuracy = clf_result["std"];
-    var num_experiments = clf_result["experiments"];
-    var num_training_epochs = clf_result["epochs"];
-
-    result_g.append("text")
-        .attr("x", 5)
-        .attr("y", 20)
-        .text(function() {
-            return "Hidden Architecture: [" + current_architecture + "]";
-        })
-        .style("font-size", "10px");
-
-    result_g.append("text")
-        .attr("x", 5)
-        .attr("y", 35)
-        .text(function() {
-            return "Training Epochs: " + num_training_epochs;
-        })
-        .style("font-size", "10px");
-
-    result_g.append("text")
-        .attr("x", 5)
-        .attr("y", 50)
-        .text(function() {
-            return "Num Experiments: " + num_experiments;
-        })
-        .style("font-size", "10px");
-
-    result_g.append("text")
-        .attr("x", 5)
-        .attr("y", 65)
-        .text(function() {
-            return "Test Accuracy, MEAN: " + mean_accuracy.toFixed(2) + "%";
-        })
-        .style("font-size", "10px");
-
-    result_g.append("text")
-        .attr("x", 5)
-        .attr("y", 80)
-        .text(function() {
-            return "Test Accuracy, STD: " + (std_accuracy / 100.0).toFixed(4);
-        })
-        .style("font-size", "10px");
-    // ---------------------------------------------------------------
-
-    // WEIGHTS ----------------
-    // ---------------------------------------------------------------
-    var tool_tip = d3.tip()
-      .attr("class", "d3-tip")
-      .offset([-8, 0])
-      .html(function(d) { return "Weight: " + d; });
-
-    main_vis_svg.call(tool_tip);
-
-    var weight_group = main_vis_svg.append("g")
-        .attr("transform", "translate(100, 200)");
-
-    var name_group = weight_group.selectAll('g')
-        .data(weight_data)
-        .enter()
-        .append('g')
-        .attr('transform', function(d, i) {
-            return 'translate(0, ' + (row_height + 5) * i + ')';
-        });
-
-    name_group.selectAll('rect.weights')
-        .data(function(d) { return d; })
-        .enter()
-        .append('rect')
-            .attr("class", "weights")
-            .attr('x', function(d, i) {
-                return (row_width + 5) * i;
-            })
-            .attr('width', function(d, i) {
-                var size = Math.abs(sizeScale(d));
-                return size;
-            })
-            .attr('height', function(d, i) {
-                var size = Math.abs(sizeScale(d));
-                return size;
-            })
-            .style('fill', function(d, i) {
-                // return (sizeScale(d) >= 0) ? "red" : "blue";
-                return (sizeScale(d) >= 0) ? "#0877bd" : "#f59322";
-            })
-            .style('stroke', "black")
-            .style("opacity", 0.85)
-            .on('mouseover', tool_tip.show)
-            .on('mouseout', tool_tip.hide)
-
-    weight_group.selectAll('text.names')
-        .data(name_data).enter()
-        .append("text")
-        .attr("class", "names")
-        .attr("x", 20)
-        .attr("y", function(d, i) {
-            return (row_width + 5) * i + 10;
-        })
-        .attr("transform", "rotate(-90)")
-        .text(function(d, i) {
-            return d;
-        })
-        .style("fill", function(d, i) {
-            if (STYLE_NAME_BY_SEX) {
-                for (var i=0; i < female_names.length; i++) {
-                    if (d === female_names[i]) {
-                        return "red";
-                    }
-                }
-                return "blue";
-            }
-            else {
-                return "black";
-            }
-        });
-
-    weight_group.selectAll('text.neurons')
-        .data(hidden_neurons).enter()
-        .append("text")
-        .attr("class", "neurons")
-        .attr("x", -30)
-        .attr("y", function(d, i) {
-            return (row_width + 5) * i + 10;
-        })
-        .text(function(d, i) {
-            return d;
-        });
-
-    weight_group.append("text")
-        .attr("class", "neuron_label")
-        .attr("x", -160)
-        .attr("y", -50)
-        .attr("transform", "rotate(-90)")
-        .text("Hidden Neuron Number")
-
-    // ---------------------------------------------------------------
-
-
-
-
-    // LEGEND ----------------------
-    // ---------------------------------------------------------------
-    var legend_g = main_vis_svg.append("g")
-        .attr("id", "legend_g")
-        .attr("transform", "translate("+legend_x+", "+legend_y+")");
-
-    legend_g.append("text")
-        .attr("x", 5)
-        .attr("y", 5)
-        .text("Legend")
-
-    var red_g = legend_g.append("g").attr("id", "red_g")
-        .attr("transform", "translate(5, 15)");
-
-    red_g.append("rect")
-        .attr("height", 10)
-        .attr("width", 10)
-        .style("fill", "#0877bd")
-        .style("stroke", "black")
-        .style("opacity", 0.85);
-
-    red_g.append("text")
-        .attr("x", 15)
-        .attr("y", 10)
-        .text("+ weights")
-        .style("font-size", "10px");
-
-
-    var blue_g = legend_g.append("g").attr("id", "blue_g")
-        .attr("transform", "translate(5, 35)");
-
-    blue_g.append("rect")
-        .attr("height", 10)
-        .attr("width", 10)
-        .style("fill", "#f59322")
-        .style("stroke", "black")
-        .style("opacity", 0.85);
-
-    blue_g.append("text")
-        .attr("x", 15)
-        .attr("y", 10)
-        .text("- weights")
-        .style("font-size", "10px");
-    // ---------------------------------------------------------------
-}
-
-function get_data(path_to_csv, part, clf_result) {
     $.ajax({
-        url             :   "/read_data",
+        url             :   "/run_network",
         method          :   'POST',
         contentType     :   'application/json',
         dataType        :   'json',
-        data            :   JSON.stringify({"path_to_csv" : path_to_csv}),
-        success : function(result) {
-            console.log("HERE");
+        data            :   JSON.stringify(clf_data),
+        success : function(clf_result) {
+            d3.select("#run_network_button").attr("value", "Generate Network");
             d3.select("#training_tooltip_text").html("");
             d3.select("body").transition().duration(1000).style("opacity", 1.0).style("background-color", "white");
             clearInterval(computing_interval);
-            visualize_data(result, part, clf_result);
-        }
-    });
-}
-function run_part_2_network() {
-    $.ajax({
-        url             :   "/run_part_2_network",
-        method          :   'POST',
-        contentType     :   'application/json',
-        dataType        :   'json',
-        data            :   JSON.stringify({"architecture" : part_2_architecture, "experiments" : num_experiments, "num_epochs" : num_epochs, "train_size" : train_size}),
-        success : function(clf_result) {
-            d3.select("#part_2_button").attr("value", "Generate Network - Part 2");
-            var path_to_csv = "app_1/static/data/weight_data.csv";
-            get_data(path_to_csv, "part_2", clf_result);
+
+            var names_and_weights = clf_result["names_and_weights"];
+            var scoring_metrics = clf_result["scoring_metrics"];
+            var accuracies = clf_result["accuracies"];
+
+            generating_network = false;
+            visualize_data(names_and_weights, scoring_metrics, accuracies);
         }
     });
 }
 
-function run_part_3_network() {
-    $.ajax({
-        url             :   "/run_part_3_network",
-        method          :   'POST',
-        contentType     :   'application/json',
-        dataType        :   'json',
-        data            :   JSON.stringify({"architecture" : part_3_architecture, "experiments" : num_experiments, "num_epochs" : num_epochs, "train_size" : train_size}),
-        success : function(clf_result) {
-            d3.select("#part_3_button").attr("value", "Generate Network - Part 3");
-            var path_to_csv = "app_1/static/data/part_3_weights.csv";
-            get_data(path_to_csv, "part_3", clf_result);
-        }
-    });
-}
 
-function process_architecture(unprocess_architecture, part) {
-    var split_arch = unprocess_architecture.split(",");
 
-    if (part === "part_2") {
-        part_2_architecture = [];
+function process_architecture(unprocess_architecture) {
+
+    try {
+        var split_arch = unprocess_architecture.split(",");
+    }
+    catch(err) {
+        var split_arch = unprocess_architecture;
+    }
+
+    current_hidden_architecture = [];
+    if (selected_architecture_type === "Hinton") {
         for (var i=0; i < split_arch.length; i++) {
-            part_2_architecture.push(parseInt(split_arch[i]));
+            current_hidden_architecture.push(parseInt(split_arch[i]));
         }
     }
-    else if (part === "part_3") {
-        part_3_architecture = [];
+    else if (selected_architecture_type === "Fully Connected") {
         for (var i=0; i < split_arch.length; i++) {
-            part_3_architecture.push(parseInt(split_arch[i]));
+            current_hidden_architecture.push(parseInt(split_arch[i]));
         }
     }
+
+    visualizer_architecture();
 }
 
 function animate_training() {
 
-    d3.select("#main_vis_svg").transition().duration(500).style("opacity", 0.0);
+    d3.select("#main_vis_div").transition().duration(500).style("opacity", 0.0);
 
     var phrase = "Training Network...".split("");
 
@@ -380,83 +120,234 @@ function animate_training() {
 /**---------------------------------------------------------------------------------------------------------
  * MAIN
  *----------------------------------------------------------------------------------------------------------*/
-$(function() {
+function setup_network_params() {
+    var network_parameters_main_div = d3.select("#controls_div").append('div').attr('id', 'network_parameters_main_div');
 
-    d3.select("body").append("h1").attr("id", "main_title").html("ANN Weight Visualizer");
 
-    var controls_div = d3.select('body').append("div").attr("id", "controls_div");
-    var part_2_div = controls_div.append("div").attr("id", "part_2_div");
-    part_2_div.append("input")
-        .attr("id", "part_2_button")
-        .attr("type", "button")
-        .attr("value", "Generate Network - Part 2")
-        .on("click", function() {
-            d3.select(this).attr("value", "Training Network...");
-            animate_training();
-            run_part_2_network();
+    // HEADER
+    // ---------------------------------------------------------------
+    network_parameters_main_div.append('h2').html("Network Parameters");
+    // ---------------------------------------------------------------
+
+    // ARCH TYPE DROPDOWN
+    // ---------------------------------------------------------------
+    var nn_type_div = network_parameters_main_div.append("div").attr("id", "nn_type_div");
+
+    var nn_type_dropdown_form = nn_type_div.append("label")
+        .html("Architecture Type")
+        .append("form")
+        .attr("id", "nn_type_dropdown_form")
+        .append("select")
+        .on("change", function() {
+            selected_architecture_type = this.value;
+            var hidden_arch = architectures[selected_architecture_type];
+            d3.select("#hidden_architecture_field").attr("value", hidden_arch);
+            process_architecture(hidden_arch);
         });
 
-    var part_2_options_div = part_2_div.append("div").attr("id", "part_2_options_div");
-    part_2_options_div.append("label").html("Hidden Architecture: ");
-    part_2_options_div.append('input')
+    nn_type_dropdown_form.selectAll("option")
+        .data(Object.keys(architectures)).enter()
+        .append("option")
+        .attr("value", function(d, i) {
+            return d;
+        })
+        .text(function(d, i) {
+            return d;
+        });
+    // ---------------------------------------------------------------
+
+
+    var network_parameters_div = network_parameters_main_div.append('div').attr('id', 'network_parameters_div');
+
+
+    // HIDDEN ARCHITECTURE TEXTFIELD
+    // ---------------------------------------------------------------
+    var hidden_arch_div = network_parameters_div.append("div").attr("id", "hidden_arch_div");
+
+    hidden_arch_div.append("label").html("Hidden Architecture: ");
+
+    hidden_arch_div.append('input')
+        .attr('id', 'hidden_architecture_field')
         .attr('type','text')
         .attr('name','textInput')
-        .attr('value', default_part_2_architecture)
+        .attr('value', architectures[selected_architecture_type])
         .on("change", function() {
-            process_architecture(this.value, "part_2");
+            process_architecture(this.value);
+        });
+    // ---------------------------------------------------------------
+
+    // LOSS FUNCTION DROPDOWN
+    // ---------------------------------------------------------------
+    var loss_function_div = network_parameters_div.append("div").attr("id", "loss_function_div");
+
+    loss_function_div.append("label").html("Loss Function");
+
+    var loss_function_form = loss_function_div.append("form")
+        .attr("id", "loss_function_form");
+
+    var loss_function_select = loss_function_form.append("select")
+        .on("change", function() {
+            loss_function = loss_functions[this.value];
         });
 
+    loss_function_select.selectAll("option")
+        .data(Object.keys(loss_functions)).enter()
+        .append("option")
+        .attr("value", function(d, i) {
+            return d;
+        })
+        .text(function(d, i) {
+            return d;
+        });
+    // ---------------------------------------------------------------
 
-    var part_3_div = controls_div.append("div").attr("id", "part_3_div");
-    part_3_div.append("input")
-        .attr("id", "part_3_button")
+
+    // ACTIVATION FUNCTION DROPDOWN
+    // ---------------------------------------------------------------
+    var activation_function_div = network_parameters_div.append("div").attr("id", "activation_function_div");
+
+    activation_function_div.append("label").html("Activation Function");
+
+    var activation_function_form = activation_function_div.append("form")
+        .attr("id", "activation_function_form");
+
+    var activation_function_select = activation_function_form.append("select")
+        .on("change", function() {
+            activation_function = activation_functions[this.value];
+        });
+
+    activation_function_select.selectAll("option")
+        .data(Object.keys(activation_functions)).enter()
+        .append("option")
+        .attr("value", function(d, i) {
+            return d;
+        })
+        .text(function(d, i) {
+            return d;
+        });
+    // ---------------------------------------------------------------
+
+    // DROPOUT
+    // ---------------------------------------------------------------
+    var dropout_div = network_parameters_div.append("div").attr("id", "dropout_div");
+
+    dropout_div.append("label").html("Dropout");
+
+    var dropout_form = dropout_div.append("form")
+        .attr("id", "dropout_form");
+
+    var dropout_select = dropout_form.append("select")
+        .on("change", function() {
+            dropout = (this.value == "On") ? true : false;
+        });
+
+    dropout_select.selectAll("option")
+        .data(["Off", "On"]).enter()
+        .append("option")
+        .attr("value", function(d, i) {
+            return d;
+        })
+        .text(function(d, i) {
+            return d;
+        });
+
+    var dropout_text_div = dropout_div.append("div").attr("id", "dropout_text_div");
+
+    dropout_text_div.append("label").html("Keep Probability: ");
+
+    var slider_val_div = dropout_text_div.append("div").attr("id", "slider_val_div");
+    slider_val_div.append("p").attr('id', "dropout_keep_prob_slider_text").html(function() { return dropout_keep_prob.toFixed(2) });
+
+    var slider_div = dropout_div.append("div").attr("id", "slider_div");
+    slider_div.append('input')
+        .attr("id", "keep_prob_slider")
+        .attr("type", "range")
+        .attr("value", 50)
+        .attr("min", 0)
+        .attr("max", 100)
+        .attr("step", 5)
+        .on("change", function() {
+            dropout_keep_prob = this.value / 100.0;
+            d3.select('#dropout_keep_prob_slider_text').html(function() { return dropout_keep_prob.toFixed(2); });
+        });
+    // ---------------------------------------------------------------
+
+    // Generate Network Button
+    // ------------------------------------------------------------
+    var view_net_button_div = network_parameters_main_div.append('div').attr("id", "view_net_button_div");
+
+    view_net_button_div.append("input")
+        .attr("id", "view_net_button")
         .attr("type", "button")
-        .attr("value", "Generate Network - Part 3")
+        .attr("value", "Hide Network")
         .on("click", function() {
-            d3.select(this).attr("value", "Training Network...");
-            animate_training();
-            run_part_3_network();
+            toggle_net_vis();
+            network_vis_active = !network_vis_active;
         });
+    // ------------------------------------------------------------
+}
 
-    var part_3_options_div = part_3_div.append("div").attr("id", "part_3_options_div");
-    part_3_options_div.append("label").html("Hidden Architecture: ");
-    part_3_options_div.append('input')
-        .attr('type','text')
-        .attr('name','textInput')
-        .attr('value', default_part_3_architecture)
-        .on("change", function() {
-            process_architecture(this.value, "part_3");
-        });
+function toggle_net_vis(hide) {
 
-    var networking_training_tooltip_div = d3.select("body").append("div")
-        .attr("id", "networking_training_tooltip_div")
-        .append("h1")
-        .attr("id", "training_tooltip_text");
+    if (hide !== undefined) {
+        d3.select("#net_arch_vis_div").transition().duration(1000).style("opacity", 0.0);
+        d3.select('#view_net_button').attr("value", "Show Network");
+        network_vis_active = false;
+        return;
+    }
 
+    if (network_vis_active) {
+        d3.select("#net_arch_vis_div").transition().duration(1000).style("opacity", 0.0);
+        d3.select('#view_net_button').attr("value", "Show Network");
+    }
+    else {
+        d3.select("#net_arch_vis_div").transition().duration(1000).style("opacity", 1.0);
+        d3.select('#view_net_button').attr("value", "Hide Network");
+    }
+}
 
-    var experiment_div = controls_div.append("div").attr("id", "experiment_num_div");
-    experiment_div.append("label").html("Experiments: ");
-    experiment_div.append('input')
+function setup_training_params() {
+    var training_params_div = d3.select("#controls_div").append("div").attr("id", "training_params_div");
+
+    // HEADER
+    // ---------------------------------------------------------------
+    training_params_div.append('h2').html("Training Parameters");
+    // ---------------------------------------------------------------
+
+    // NUM EXPERIMENTS TEXTFIELD
+    // ---------------------------------------------------------------
+    var experiments_div = training_params_div.append("div").attr("id", "experiments_div");
+    experiments_div.append("label").html("Experiments: ");
+    experiments_div.append('input')
+        .attr('id','experiments_text_field')
         .attr('type','text')
         .attr('name','textInput')
         .attr('value', default_num_experiments)
         .on("change", function() {
             num_experiments = this.value;
         });
+    // ---------------------------------------------------------------
 
-    var epochs_div = controls_div.append("div").attr("id", "epochs_div");
+    // TRAINING EPOCHS TEXTFIELD
+    // ---------------------------------------------------------------
+    var epochs_div = training_params_div.append("div").attr("id", "epochs_div");
     epochs_div.append("label").html("Training Epochs: ");
     epochs_div.append('input')
+        .attr('id','training_epochs_text_field')
         .attr('type','text')
         .attr('name','textInput')
         .attr('value', default_num_epochs)
         .on("change", function() {
             num_epochs = this.value;
         });
+    // ---------------------------------------------------------------
 
-    var train_size_div = controls_div.append("div").attr("id", "train_size_div");
+    // TRAINING SIZE TEXTFIELD
+    // ---------------------------------------------------------------
+    var train_size_div = training_params_div.append("div").attr("id", "train_size_div");
     train_size_div.append("label").html("Training Size (max 104): ");
     train_size_div.append('input')
+        .attr('id','training_size_text_field')
         .attr('type','text')
         .attr('name','textInput')
         .attr('value', default_train_size)
@@ -469,7 +360,58 @@ $(function() {
                 train_size = this.value;
             }
         });
+    // ---------------------------------------------------------------
+}
 
+function controls_setup() {
+    var controls_div = d3.select('#app_div').append("div").attr("id", "controls_div");
 
+    // WEIGHT MOUSEOVER TOOLTIP
+    // -------------------------------------------------------------------
+    var networking_training_tooltip_div = d3.select("body").append("div")
+        .attr("id", "networking_training_tooltip_div")
+        .append("h1")
+        .attr("id", "training_tooltip_text");
+    // -------------------------------------------------------------------
 
+    // NETWORK PARAMETERS
+    // -----------------------
+    setup_network_params();
+    // -----------------------
+
+    // Training Parameters
+    // -----------------------
+    setup_training_params();
+    // -----------------------
+
+    // Generate Network Button
+    // ------------------------------------------------------------
+    var run_network_button_div = controls_div.append('div').attr("id", "run_network_button_div");
+
+    run_network_button_div.append("input")
+        .attr("id", "run_network_button")
+        .attr("type", "button")
+        .attr("value", "Generate Network")
+        .on("click", function() {
+            if (generating_network) {
+                return;
+            }
+            toggle_net_vis("hide");
+            generating_network = true;
+            d3.select(this).attr("value", "Training Network...");
+            animate_training();
+            run_network();
+        });
+    // ------------------------------------------------------------
+}
+
+$(function() {
+
+    d3.select("body").append("h1").attr("id", "main_title").html("ANN Weight Visualizer");
+
+    d3.select("body").append("div").attr("id", "app_div");
+
+    controls_setup();
+
+    visualizer_architecture();
 });

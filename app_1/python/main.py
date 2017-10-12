@@ -44,8 +44,20 @@ def split_data_part_3(dataset, train_size):
         }
     }
 
-def part2(architecture, experiments, n_epochs, train_size):
+def Hinton_architecture(architecture, experiments, n_epochs, train_size, dropout, dropout_keep_prob, activation_function, loss_function):
     relationship_dataset = read_family_tree_data()
+    num_classes = 24
+
+    clf_params = {
+        "hidden_layers" : architecture,
+        "num_classes" : num_classes,
+        "loss_fxn" : loss_function,
+        "n_epochs" : n_epochs,
+        "activation_fxn" : activation_function,
+        "dropout" : dropout,
+        "keep_prob" : dropout_keep_prob,
+        "verbose" : True
+    }
 
     top_accuracies = []
     for i in range(int(experiments)):
@@ -54,7 +66,7 @@ def part2(architecture, experiments, n_epochs, train_size):
         training_data = data["training"]
         test_data = data["test"]
 
-        clf = RelationshipDNN(hidden_layers=architecture, num_classes=24, n_epochs=n_epochs, activation_fxn="sigmoid", verbose=True)
+        clf = RelationshipDNN(**clf_params)
         clf.fit(training_data, test_data)
 
         train_acc = clf._metrics["training_accuracies"][-1]
@@ -70,12 +82,25 @@ def part2(architecture, experiments, n_epochs, train_size):
     df = pd.DataFrame(person_1_layer_weights, index=relationship_dataset["names"], columns=[i for i in range(1, 7)])
     df.to_csv("app_1/static/data/weight_data.csv", sep=",")
 
-    return clf, {"mean" : test_acc_mean, "std" : test_acc_std, "experiments" : experiments, "epochs" : n_epochs}
+    return df, clf, {"mean" : test_acc_mean, "std" : test_acc_std, "experiments" : experiments, "epochs" : n_epochs}
 
 
-def part3(architecture, experiments, n_epochs, train_size):
+def fully_connected_architecture(architecture, experiments, n_epochs, train_size, dropout, dropout_keep_prob, activation_function, loss_function):
+
     relationship_dataset = read_family_tree_data()
     num_classes = 24
+
+    clf_params = {
+        "hidden_layers" : architecture,
+        "num_classes" : num_classes,
+        "loss_fxn" : loss_function,
+        "batch_size" : 89,
+        "n_epochs" : n_epochs,
+        "activation_fxn" : activation_function,
+        "dropout" : dropout,
+        "keep_prob" : dropout_keep_prob,
+        "verbose" : True
+    }
 
     top_accuracies = []
     for i in range(int(experiments)):
@@ -84,7 +109,7 @@ def part3(architecture, experiments, n_epochs, train_size):
         training_data = data["training"]
         test_data = data["test"]
 
-        clf = DNN(hidden_layers=architecture, num_classes=num_classes, loss_fxn="xentropy", batch_size=89, n_epochs=n_epochs, activation_fxn="sigmoid", verbose=True)
+        clf = DNN(**clf_params)
         clf.fit(training_data, test_data)
 
         train_acc = clf._metrics["training_accuracies"][-1]
@@ -99,16 +124,16 @@ def part3(architecture, experiments, n_epochs, train_size):
     df = pd.DataFrame(W1, index=np.r_[relationship_dataset["names"], relationship_dataset["relationships"]], columns=[i for i in range(1, architecture[0]+1)])
     df.to_csv("app_1/static/data/part_3_weights.csv", sep=",")
 
-    return clf, {"mean" : test_acc_mean, "std" : test_acc_std, "experiments" : experiments, "epochs" : n_epochs}
+    return df, clf, {"mean" : test_acc_mean, "std" : test_acc_std, "experiments" : experiments, "epochs" : n_epochs}
 
 
-def main(architecture, experiments, part, n_epochs=5000, train_size=89):
-    if part is "part_2":
-        clf, results = part2(architecture, experiments, n_epochs, train_size)
-    elif part is "part_3":
-        clf, results = part3(architecture, experiments, n_epochs, train_size)
+def main(architecture_type, clf_params):
+    if architecture_type == "Hinton":
+        df, clf, scoring_metrics = Hinton_architecture(**clf_params)
+    elif architecture_type == "Fully Connected":
+        df, clf, scoring_metrics = fully_connected_architecture(**clf_params)
 
-    return clf, results
+    return df, clf, scoring_metrics
 
 if __name__ == "__main__":
     main()
