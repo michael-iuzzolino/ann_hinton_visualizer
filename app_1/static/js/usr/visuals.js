@@ -91,7 +91,6 @@ function visualizer_architecture() {
             .style('stroke', "black")
             .style("opacity", 0.85);
 
-
 }
 
 
@@ -466,6 +465,33 @@ function train_test_plot(accuracies) {
       .style("text-anchor", "middle")
       .text("Accuracy %");
 
+    var acc_legend_g = plot_g.append("g").attr("id", "acc_legend_g")
+      .attr("transform", "translate("+(PLOT_CONTAINER_WIDTH-150)+", "+(PLOT_CONTAINER_HEIGHT - 60)+")");
+
+    var train_acc_g = acc_legend_g.append("g").attr("id", "train_acc_g");
+    train_acc_g.append("circle")
+      .attr("r", 5)
+      .style("fill", "red")
+      .style("stroke", "black");
+
+    train_acc_g.append("text")
+        .attr("x", 20)
+        .attr("y", 3)
+        .text("Training")
+        .style("font-size", "12px");
+
+    var test_acc_g = acc_legend_g.append("g").attr("id", "test_acc_g")
+    .attr("transform", "translate(0, 15)");
+    test_acc_g.append("circle")
+      .attr("r", 5)
+      .style("fill", "blue")
+      .style("stroke", "black");
+
+    test_acc_g.append("text")
+    .attr("x", 20)
+    .attr("y", 3)
+    .text("Test")
+    .style("font-size", "12px");
 }
 
 function visualize_data(data, clf_result, accuracies) {
